@@ -1,4 +1,4 @@
-#' Get a vector of qualitative colors
+#' Get a vector of custom colors
 #'
 #' @return A character vector of colors
 #' @importFrom RColorBrewer brewer.pal brewer.pal.info
