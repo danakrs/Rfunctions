@@ -1,0 +1,554 @@
+
+### ------------ save_plot.R---------------
+save_plot <- function(filename, p, width=NULL, height=NULL) {
+  if (!is.null(width) && !is.null(height)) {
+    ggsave(file.path(plots_dir, paste0("/",prefix,"/",filename, ".png")), plot = p, width = width, height = height)
+    #ggsave(file.path(plots_dir, paste0("/",prefix,"/",filename, ".svg")), plot = p, width = width, height = height)
+    ggsave(file.path(plots_dir, paste0("/",prefix,"/",filename, ".pdf")), plot = p, width = width, height = height)
+  } else {
+    ggsave(file.path(plots_dir, paste0("/",prefix,"/",filename, ".png")), plot = p)
+    #ggsave(file.path(plots_dir, paste0("/",prefix,"/",filename, ".svg")), plot = p)
+    ggsave(file.path(plots_dir, paste0("/",prefix,"/",filename, ".pdf")), plot = p)
+  }
+}
+
+
+### ------------ savePlot.R---------------
+savePlot <- function(filename, p, width=NULL, height=NULL) {
+  if (!is.null(width) && !is.null(height)) {
+    ggsave(file.path(plots_dir, paste0("/",tag,"/",filename, ".png")), plot = p, width = width, height = height)
+    #ggsave(file.path(plots_dir, paste0("/",prefix,"/",filename, ".svg")), plot = p, width = width, height = height)
+    ggsave(file.path(plots_dir, paste0("/",tag,"/",filename, ".pdf")), plot = p, width = width, height = height)
+  } else {
+    ggsave(file.path(plots_dir, paste0("/",tag,"/",filename, ".png")), plot = p)
+    #ggsave(file.path(plots_dir, paste0("/",prefix,"/",filename, ".svg")), plot = p)
+    ggsave(file.path(plots_dir, paste0("/",tag,"/",filename, ".pdf")), plot = p)
+  }
+}
+
+
+### ------------ save_RDS.R---------------
+save_RDS <- function(dir, object,filename){
+  saveRDS(object, file.path(
+    dir,paste0(prefix,"/", tag ,"_",filename,".RDS")))
+}
+
+
+
+
+
+
+### ------------ get_colors.R---------------
+# GET COLORS FUNCTION FOR SCOPE
+
+require(RColorBrewer)
+get_colors <- function () {
+  
+  if (!"RColorBrewer" %in% (.packages())) {suppressMessages(library(RColorBrewer))}
+  
+  qual_col_pals <- brewer.pal.info[brewer.pal.info$category == 'qual',]
+  col_vector <- unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+  col_vector <- col_vector[-c(4, 7, 8, 12)] # remove certain colors
+  return(col_vector)
+  
+} # function
+
+
+
+#https://divingintogeneticsandgenomics.rbind.io/post/how-to-do-gene-correlation-for-single-cell-rnaseq-data-part-1/
+
+get_expression_data<- function(obj, assay = NULL, slot = "data", 
+                               genes = NULL, cells = NULL){
+  if (is.null(genes) & !is.null(cells)){
+    df<- GetAssayData(obj, assay = assay, slot = slot)[, cells, drop = FALSE] %>%
+      matrix_to_expression_df(obj = obj)
+  } else if (!is.null(genes) & is.null(cells)){
+    df <- GetAssayData(obj, assay = assay, slot = slot)[genes, , drop = FALSE] %>%
+      matrix_to_expression_df(obj = obj)
+  } else if (is.null(genes & is.null(cells))){
+    df <- GetAssayData(obj, assay = assay, slot = slot)[, , drop = FALSE] %>%
+      matrix_to_expression_df(obj = obj)
+  } else {
+    df<- GetAssayData(obj, assay = assay, slot = slot)[genes, cells, drop = FALSE] %>%
+      matrix_to_expression_df(obj = obj)
+  }
+  return(df)
+}
+
+matrix_to_expression_df<- function(x, obj){
+  df<- x %>%
+    as.matrix() %>% 
+    as.data.frame() %>%
+    tibble::rownames_to_column(var= "gene") %>%
+    tidyr::pivot_longer(cols = -1, names_to = "cell", values_to = "expression") %>%
+    tidyr::pivot_wider(names_from = "gene", values_from = expression) %>%
+    left_join(obj@meta.data %>% 
+                tibble::rownames_to_column(var = "cell"))
+  return(df)
+}
+
+
+### ------------ plotComposition.R---------------
+# 
+
+custom_colors <- list()
+
+colors_dutch <- c(
+  '#FFC312','#C4E538','#12CBC4','#FDA7DF','#ED4C67',
+  '#F79F1F','#A3CB38','#1289A7','#D980FA','#B53471',
+  '#EE5A24','#009432','#0652DD','#9980FA','#833471',
+  '#EA2027','#006266','#1B1464','#5758BB','#6F1E51'
+)
+
+colors_spanish <- c(
+  '#40407a','#706fd3','#f7f1e3','#34ace0','#33d9b2',
+  '#2c2c54','#474787','#aaa69d','#227093','#218c74',
+  '#ff5252','#ff793f','#d1ccc0','#ffb142','#ffda79',
+  '#b33939','#cd6133','#84817a','#cc8e35','#ccae62'
+)
+
+custom_colors$discrete <- c(colors_dutch, colors_spanish)
+
+custom_colors$cell_cycle <- setNames(
+  c('#45aaf2', '#f1c40f', '#e74c3c', '#7f8c8d'),
+  c('G1',      'S',       'G2M',     '-')
+)
+
+
+# plotComposition <- function(seurat) {
+#   table_samples_by_clusters <- seurat@meta.data %>%
+#     group_by(sample, cluster) %>%
+#     summarize(count = n()) %>%
+#     spread(cluster, count, fill = 0) %>%
+#     ungroup() %>%
+#     mutate(total_cell_count = rowSums(.[c(2:ncol(.))])) %>%
+#     dplyr::select(c('sample', 'total_cell_count', everything())) %>%
+#     arrange(factor(sample, levels = levels(seurat@meta.data$sample)))
+#   
+#   knitr::kable(table_samples_by_clusters)
+#   
+#   table_clusters_by_samples <- seurat@meta.data %>%
+#     group_by(cluster, sample) %>%
+#     summarize(count = n()) %>%
+#     spread(sample, count, fill = 0) %>%
+#     ungroup() %>%
+#     mutate(total_cell_count = rowSums(.[c(2:ncol(.))])) %>%
+#     select(c('cluster', 'total_cell_count', everything())) %>%
+#     arrange(factor(cluster, levels = levels(seurat@meta.data$cluster)))
+#   
+#   knitr::kable(table_clusters_by_samples)
+#   
+#   temp_labels <- seurat@meta.data %>%
+#     group_by(sample) %>%
+#     tally()
+#   
+#   
+#   p1 <- table_samples_by_clusters %>%
+#     select(-c("total_cell_count")) %>%
+#     reshape2::melt(id.vars = "sample") %>%
+#     mutate(sample = factor(sample, levels = levels(as.factor(seurat@meta.data$sample)))) %>%
+#     ggplot(aes(sample, value)) +
+#     geom_bar(aes(fill = variable), position = "stack", stat = "identity") +
+#     geom_text(
+#       data = temp_labels,
+#       aes(x = sample, y = Inf, label = paste0('n = ', format(n, big.mark = ',', trim = TRUE)), angle = 45, hjust= 0, vjust=-1),
+#       color = 'black', size = 2.8
+#     ) +
+#     scale_fill_manual(name = "Cluster"
+#                       , values = custom_colors$discrete
+#     ) +
+#     scale_y_continuous(name = "Number of cells", labels = scales::comma, expand = c(0.01, 0)) +
+#     coord_cartesian(clip = 'off') +
+#     theme_bw() +
+#     theme(
+#       legend.position = 'left',
+#       plot.title = element_text(hjust = 0.5),
+#       text = element_text(size = 16),
+#       panel.grid.major = element_blank(),
+#       panel.grid.minor = element_blank(),
+#       axis.title.x = element_blank(),
+#       axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+#       plot.margin = margin(t = 20, r = 0, b = 0, l = 0, unit = 'pt')
+#     )
+#   
+#   temp_labels <- seurat@meta.data %>%
+#     group_by(cluster) %>%
+#     tally() %>%
+#     dplyr::rename('cluster' = cluster)
+#   
+#   p2 <- table_clusters_by_samples %>%
+#     select(-c('total_cell_count')) %>%
+#     reshape2::melt(id.vars = 'cluster') %>%
+#     mutate(cluster = factor(cluster, levels = levels(seurat@meta.data$cluster))) %>%
+#     ggplot(aes(cluster, value)) +
+#     geom_bar(aes(fill = variable), position = 'stack', stat = 'identity') +
+#     geom_text(
+#       data = temp_labels,
+#       aes(x = cluster, y = Inf, label = paste0('n = ', format(n, big.mark = ',', trim = TRUE)), vjust = -1),
+#       color = 'black', size = 2.8
+#     ) +
+#     scale_fill_manual(name = 'sample'
+#                       ,values =  custom_colors$discrete[2:3]
+#     ) +
+#     scale_y_continuous(labels = scales::comma, expand = c(0.01, 0)) +
+#     coord_cartesian(clip = 'off') +
+#     theme_bw() +
+#     theme(
+#       legend.position = 'right',
+#       plot.title = element_text(hjust = 0.5),
+#       text = element_text(size = 16),
+#       panel.grid.major = element_blank(),
+#       panel.grid.minor = element_blank(),
+#       axis.title = element_blank(),
+#       plot.margin = margin(t = 20, r = 0, b = 0, l = 10, unit = 'pt')
+#     )
+#   p1 + p2 +
+#     ggtitle("Composition SampleClusters by Number") +
+#     theme(plot.title = element_text(color="black", size=14, vjust = 5)) +
+#     plot_layout(ncol = 2, widths = c(
+#       seurat@meta.data$sample %>% unique() %>% length(),
+#       seurat@meta.data$cluster %>% unique() %>% length()
+#     ))
+#   
+#   p_number <- p1 + p2 +
+#     ggtitle("Composition SampleClusters by Number") +
+#     theme(plot.title = element_text(color="black", size=14, vjust = 5)) +
+#     plot_layout(ncol = 2, widths = c(
+#       seurat@meta.data$sample %>% unique() %>% length(),
+#       seurat@meta.data$cluster %>% unique() %>% length()
+#     ))
+#   save_plot(paste0(script_number,prefix,"_",title,"_composition_samples_cluster_by_number"), p_number, width = 18, height = 8)
+#   
+#   
+#   temp_labels <- seurat@meta.data %>%
+#     group_by(sample) %>%
+#     tally()
+#   
+#   p3 <- table_samples_by_clusters %>%
+#     select(-c('total_cell_count')) %>%
+#     reshape2::melt(id.vars = 'sample') %>%
+#     mutate(sample = factor(sample, levels = levels((as.factor(seurat@meta.data$sample))))) %>%
+#     ggplot(aes(sample, value)) +
+#     geom_bar(aes(fill = variable), position = 'fill', stat = 'identity') +
+#     geom_text(
+#       data = temp_labels,
+#       aes(x = sample, y = Inf, label = paste0('n = ', format(n, big.mark = ',', trim = TRUE)), angle = 45, hjust= 0, vjust=-1),
+#       color = 'black', size = 2.8
+#     ) +
+#     scale_fill_manual(name = 'Cluster', values = custom_colors$discrete) +
+#     scale_y_continuous(name = 'Percentage [%]', labels = scales::percent_format(), expand = c(0.01,0)) +
+#     coord_cartesian(clip = 'off') +
+#     theme_bw() +
+#     theme(
+#       legend.position = 'left',
+#       plot.title = element_text(hjust = 0.5),
+#       text = element_text(size = 16),
+#       panel.grid.major = element_blank(),
+#       panel.grid.minor = element_blank(),
+#       axis.title.x = element_blank(),
+#       axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+#       plot.margin = margin(t = 20, r = 0, b = 0, l = 0, unit = 'pt')
+#     )
+#   
+#   temp_labels <- seurat@meta.data %>%
+#     group_by(cluster) %>%
+#     tally() %>%
+#     dplyr::rename('cluster' = cluster)
+#   p4 <- table_clusters_by_samples %>%
+#     select(-c('total_cell_count')) %>%
+#     reshape2::melt(id.vars = 'cluster') %>%
+#     mutate(cluster = factor(cluster, levels = levels(seurat@meta.data$cluster))) %>%
+#     ggplot(aes(cluster, value)) +
+#     geom_bar(aes(fill = variable), position = 'fill', stat = 'identity') +
+#     geom_text(
+#       data = temp_labels, aes(x = cluster, y = Inf, label = paste0('n = ', format(n, big.mark = ',', trim = TRUE)), vjust = -1),
+#       color = 'black', size = 2.8
+#     ) +
+#     scale_fill_manual(name = 'sample', values = custom_colors$discrete[2:3]) +
+#     scale_y_continuous(name = 'Percentage [%]', labels = scales::percent_format(), expand = c(0.01,0)) +
+#     coord_cartesian(clip = 'off') +
+#     theme_bw() +
+#     theme(
+#       legend.position = 'right',
+#       plot.title = element_text(hjust = 0.5),
+#       text = element_text(size = 16),
+#       panel.grid.major = element_blank(),
+#       panel.grid.minor = element_blank(),
+#       axis.title = element_blank(),
+#       plot.margin = margin(t = 20, r = 0, b = 0, l = 10, unit = 'pt')
+#     )
+#   
+#   p3 + p4 +
+#     ggtitle("Composition SampleClusters by Percentage ") +
+#     theme(plot.title = element_text(color="black", size=14, vjust = 5)) +
+#     plot_layout(ncol = 2, widths = c(
+#       seurat@meta.data$sample %>% unique() %>% length(),
+#       seurat@meta.data$cluster %>% unique() %>% length()
+#     ))
+#   
+#   p_percent <- p3 + p4 +
+#     ggtitle("Composition SampleClusters by Percentage") +
+#     theme(plot.title = element_text(color="black", size=14, vjust = 5)) +
+#     plot_layout(ncol = 2, widths = c(
+#       seurat@meta.data$sample %>% unique() %>% length(),
+#       seurat@meta.data$cluster %>% unique() %>% length()
+#     ))
+#   save_plot(paste0(script_number,prefix,"_",title,"_composition_samples_topLayer_by_percent"), p_percent, width = 18, height = 8)
+#   return(list(p_number, p_percent))
+# }
+
+
+
+
+
+
+##### singlecellmehtods
+## https://github.com/immunogenomics/singlecellmethods/blob/master/R/scaleData.R
+scaleData <- function(A, margin = 1, thresh = 10) {
+  A <- as(A, "dgCMatrix")
+  
+  if (margin != 1) A <- t(A)
+  
+  res <- scaleRows_dgc(A@x, A@p, A@i, ncol(A), nrow(A), thresh)
+  if (margin != 1) res <- t(res)
+  row.names(res) <- row.names(A)
+  colnames(res) <- colnames(A)
+  return(res)
+}
+
+#' @export
+scaleDataWithStats <- function(A, mean_vec, sd_vec, margin = 1, thresh = 10) {
+  if (!"dgCMatrix" %in% class(A))
+    A <- as(A, "dgCMatrix")
+  
+  if (margin != 1) A <- t(A)
+  
+  res <- scaleRowsWithStats_dgc(A@x, A@p, A@i, mean_vec, sd_vec, 
+                                ncol(A), nrow(A), thresh)
+  if (margin != 1) res <- t(res)
+  row.names(res) <- row.names(A)
+  colnames(res) <- colnames(A)
+  return(res)
+}
+
+
+#' @export
+rowSDs <- function(A, row_means=NULL, weights=NULL) {
+  if (is.null(row_means)) {
+    #         row_means <- Matrix::rowMeans(A)
+    row_means <- singlecellmethods::rowMeans(A, weights)
+  }
+  if (is.null(weights)) {
+    res <- as.numeric(rowSDs_dgc(A@x, A@p, A@i, row_means, ncol(A), nrow(A), TRUE))
+  } else {
+    res <- as.numeric(rowSDsWeighted_dgc(A@x, A@p, A@i, row_means, weights, ncol(A), nrow(A), TRUE))
+  }
+  names(res) <- row.names(A)
+  return(res)
+}
+
+#' @export
+rowVarsStd <- function(A, row_means, row_sds, vmax, weights=NULL) {
+  if (is.null(weights)) {
+    res <- as.numeric(rowVarSDs_dgc(A@x, A@p, A@i, row_means, row_sds, vmax, ncol(A), nrow(A), FALSE))
+  } 
+  #     else {
+  #         res <- as.numeric(rowSDsWeighted_dgc(A@x, A@p, A@i, row_means, weights, ncol(A), nrow(A), TRUE))
+  #     }
+  names(res) <- row.names(A)
+  return(res)
+}
+
+
+#' @export
+rowVars <- function(A, row_means=NULL, weights=NULL) {
+  if (is.null(row_means)) {
+    row_means <- singlecellmethods::rowMeans(A, weights)
+  }
+  if (is.null(weights)) {
+    res <- as.numeric(rowSDs_dgc(A@x, A@p, A@i, row_means, ncol(A), nrow(A), FALSE))
+  } else {
+    res <- as.numeric(rowSDsWeighted_dgc(A@x, A@p, A@i, row_means, weights, ncol(A), nrow(A), FALSE))
+  }
+  names(res) <- row.names(A)
+  return(res)
+}
+
+
+#' @export
+rowMeans <- function(A, weights=NULL) {
+  if (is.null(weights)) {
+    res <- Matrix::rowMeans(A)
+  } else {
+    res <- as.numeric(rowMeansWeighted_dgc(A@x, A@p, A@i, weights, ncol(A), nrow(A)))
+  }
+  names(res) <- row.names(A)
+  return(res)
+}
+
+##### for CCA to call harmoy 
+## https://github.com/immunogenomics/harmony/blob/master/R/RcppExports.R
+
+compute_Y <- function(Z_cos, R) {
+  .Call('_harmony_compute_Y', PACKAGE = 'harmony', Z_cos, R)
+}
+
+scaleRows_dgc <- function(x, p, i, ncol, nrow, thresh) {
+  .Call('_harmony_scaleRows_dgc', PACKAGE = 'harmony', x, p, i, ncol, nrow, thresh)
+}
+
+
+## Adapted from the Harmony R package (Korsunsky, et al. Nat Methods 2018)
+cosine_normalize <- function(X, MARGIN = 1, do_safe = TRUE) {
+  if (do_safe) {
+    X <- sweep(X, MARGIN, apply(X, MARGIN, max), "/")
+  }
+  sweep(X, MARGIN, apply(X, MARGIN, function(x) sqrt(sum(x^2))), "/")
+}
+
+plot_shuffled_features <- function(ab, umap, exprs, pct = 0.95) {
+  max.cutoff = quantile(exprs[ab,], pct)
+  min.cutoff = quantile(exprs[ab,], 1-pct)
+  tmp <- sapply(X = exprs[ab,], FUN = function(x) {
+    return(ifelse(test = x > max.cutoff, yes = max.cutoff,
+                  no = x))
+  })
+  tmp <- sapply(X = tmp, FUN = function(x) {
+    return(ifelse(test = x < min.cutoff, yes = min.cutoff,
+                  no = x))
+  })
+  umap_res_plot <- cbind(umap, tmp)
+  return(ggplot(data = as.data.frame(umap_res_plot)[sample(nrow(umap_res_plot)),] , aes(x = V1, y = V2)) +
+           geom_point(mapping = aes(color = tmp), shape = ".") +
+           scale_color_viridis(option = "plasma", end = .9) +
+           theme_classic() +
+           theme(legend.position = "none", axis.text = element_blank(), axis.title = element_blank()) +
+           labs(title = ab))
+}
+
+## Adapted from the MASC R package (Fonseka, Rao, et al. Sci Trans Med 2017)
+MASC.me <- function(dataset, cluster, contrast, random_effects = NULL, fixed_effects = NULL,
+                    verbose = FALSE, save_models = FALSE, save_model_dir = NULL, weights = NULL) {
+  
+  
+  # Generate design matrix from cluster assignments
+  cluster <- as.character(cluster)
+  designmat <- model.matrix(~ cluster + 0, data.frame(cluster = cluster))
+  dataset <- cbind(designmat, dataset)
+  
+  # Convert cluster assignments to string
+  cluster <- as.character(cluster)
+  # Prepend design matrix generated from cluster assignments
+  designmat <- model.matrix(~ cluster + 0, data.frame(cluster = cluster))
+  dataset <- cbind(designmat, dataset)
+  # Create output list to hold results
+  res <- vector(mode = "list", length = length(unique(cluster)))
+  names(res) <- attributes(designmat)$dimnames[[2]]
+  
+  # Create model formulas
+  if (!is.null(fixed_effects) && !is.null(random_effects)) {
+    model_rhs <- paste0(c(paste0(fixed_effects, collapse = " + "),
+                          paste0("(1|", random_effects, ")", collapse = " + ")),
+                        collapse = " + ")
+    if (verbose == TRUE) {
+      message(paste("Using null model:", "cluster ~", model_rhs))
+    }
+  } else if (!is.null(fixed_effects) && is.null(random_effects)) {
+    model_rhs <- paste0(fixed_effects, collapse = " + ")
+    if (verbose == TRUE) {
+      message(paste("Using null model:", "cluster ~", model_rhs))
+      # For now, do not allow models without mixed effects terms
+      stop("No random effects specified")
+    }
+  } else if (is.null(fixed_effects) && !is.null(random_effects)) {
+    model_rhs <- paste0("(1|", random_effects, ")", collapse = " + ")
+    if (verbose == TRUE) {
+      message(paste("Using null model:", "cluster ~", model_rhs))
+    }
+  } else {
+    model_rhs <- "1" # only includes intercept
+    if (verbose == TRUE) {
+      message(paste("Using null model:", "cluster ~", model_rhs))
+      stop("No random or fixed effects specified")
+    }
+  }
+  
+  # Initialize list to store model objects for each cluster
+  cluster_models <- vector(mode = "list",
+                           length = length(attributes(designmat)$dimnames[[2]]))
+  names(cluster_models) <- attributes(designmat)$dimnames[[2]]
+  
+  # Run nested mixed-effects models for each cluster
+  for (i in seq_along(attributes(designmat)$dimnames[[2]])) {
+    test_cluster <- attributes(designmat)$dimnames[[2]][i]
+    if (verbose == TRUE) {
+      message(paste("Creating logistic mixed models for", test_cluster))
+    }
+    null_fm <- as.formula(paste0(c(paste0(test_cluster, " ~ 1 + "),
+                                   model_rhs), collapse = ""))
+    full_fm <- as.formula(paste0(c(paste0(test_cluster, " ~ ", contrast, " + "),
+                                   model_rhs), collapse = ""))
+    # Run null and full mixed-effects models
+    null_model <- lme4::glmer(formula = null_fm, data = dataset,
+                              family = binomial, nAGQ = 1, verbose = 0,
+                              control = glmerControl(optimizer = "bobyqa"), weights = weights)
+    #   print(summary(null_model))
+    full_model <- lme4::glmer(formula = full_fm, data = dataset,
+                              family = binomial, nAGQ = 1, verbose = 0,
+                              control = glmerControl(optimizer = "bobyqa"), weights = weights)
+    #   print(summary(full_model))
+    flush.console()
+    model_lrt <- anova(null_model, full_model)
+    # calculate confidence intervals for contrast term beta
+    contrast_lvl2 <- paste0(contrast, levels(dataset[[contrast]])[2])
+    contrast_ci <- confint.merMod(full_model, method = "Wald",
+                                  parm = contrast_lvl2)
+    # Save model objects to list
+    cluster_models[[i]]$null_model <- null_model
+    cluster_models[[i]]$full_model <- full_model
+    cluster_models[[i]]$model_lrt <- model_lrt
+    cluster_models[[i]]$confint <- contrast_ci
+  }
+  
+  # Organize results into output dataframe
+  output <- data.frame(cluster = attributes(designmat)$dimnames[[2]],
+                       size = colSums(designmat))
+  output$model.pvalue <- sapply(cluster_models, function(x) x$model_lrt[["Pr(>Chisq)"]][2])
+  output[[paste(contrast_lvl2, "OR", sep = ".")]] <- sapply(cluster_models, function(x) exp(fixef(x$full)[[contrast_lvl2]]))
+  output[[paste(contrast_lvl2, "OR", "95pct.ci.lower", sep = ".")]] <- sapply(cluster_models, function(x) exp(x$confint[contrast_lvl2, "2.5 %"]))
+  output[[paste(contrast_lvl2, "OR", "95pct.ci.upper", sep = ".")]] <- sapply(cluster_models, function(x) exp(x$confint[contrast_lvl2, "97.5 %"]))
+  
+  # Return MASC results and save models if specified
+  if (save_models == TRUE) {
+    saveModelObj(cluster_models, save_dir = save_model_dir)
+    return(output)
+  } else {
+    return(output)
+  }
+}
+
+## From Kamil Slowikowski (https://slowkow.com/notes/ggplot2-color-by-density/)
+get_density <- function(x, y, ...) {
+  dens <- MASS::kde2d(x, y, ...)
+  ix <- findInterval(x, dens$x)
+  iy <- findInterval(y, dens$y)
+  ii <- cbind(ix,iy)
+  return(dens$z[ii])
+}
+
+
+BuildSNNSeurat <- function (data.use, k.param = 30, prune.SNN = 1/15, nn.eps = 0) {
+  my.knn <- nn2(data = data.use, k = k.param, searchtype = "standard", eps = nn.eps)
+  nn.ranked <- my.knn$nn.idx
+  
+  snn_res <- ComputeSNN(nn_ranked = nn.ranked, prune = prune.SNN)
+  rownames(snn_res) <- row.names(data.use)
+  colnames(snn_res) <- row.names(data.use)
+  return(snn_res)
+}
+#environment(BuildSNNSeurat) <- asNamespace("Seurat")
+
+
+
+
+

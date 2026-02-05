@@ -1,0 +1,56 @@
+
+
+
+
+git --version
+
+git config --global user.name "Your Name"
+git config --global user.email "youremail@example.com"
+
+git config --global --list
+ssh-keygen -t ed25519 -C "youremail@example.com"
+cat ~/.ssh/id_ed25519.pub
+
+--> Add SSH key to GitHub
+Go to GitHub → Settings → SSH and GPG keys
+Click New SSH key
+Paste the key
+Give it a name (e.g. “RStudio Server”)
+Save
+
+ssh -T git@github.com
+
+Create repository in Github & copy
+git@github.com:danakrs/scRNASeq_Krauss_etal_2025.git
+
+In RStudio empty project folder git init
+
+Created RProject
+Edit .gitignore
+
+
+Locally:
+git status
+git add .
+git commit -m "Initial project structure"
+
+
+git remote add origin git@github.com:danakrs/scRNASeq_Krauss_etal_2025.git
+git remote -v # check
+
+git branch -M main
+git push -u origin main
+
+
+
+
+Then daily workflow
+git status
+git add .
+git commit -m "Meaningful message"
+git push
+
+git pull # to get updates
+
+
+
