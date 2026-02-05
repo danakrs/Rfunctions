@@ -54,3 +54,30 @@ git pull # to get updates
 
 
 
+
+
+
+
+
+
+
+###################
+Creating Functions & Package
+install.packages(c("devtools", "roxygen2", "remotes"))
+create repo git@github.com:danakrs/Rfunctions.git
+Create local RProject --> R Package
+
+git init
+git remote add origin git@github.com:danakrs/Rfunctions.git
+git remote -v
+
+
+Document functions with roxygen2 (IMPORTANT)!!!
+
+devtools::document()
+UPDATE DESCRIPTION!!
+devtools::check()
+
+
+
+
