@@ -6,7 +6,7 @@
 # You can learn more about package authoring with RStudio at:
 #
 #   https://r-pkgs.org
-#
+# edit some stuff for synch
 # Some useful keyboard shortcuts for package authoring:
 #
 #   Install Package:           'Ctrl + Shift + B'
