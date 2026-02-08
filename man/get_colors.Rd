@@ -2,7 +2,7 @@
 % Please edit documentation in R/get_colors.R
 \name{get_colors}
 \alias{get_colors}
-\title{Get a vector of qualitative colors}
+\title{Get a vector of custom colors}
 \usage{
 get_colors()
 }
@@ -10,5 +10,5 @@ get_colors()
 A character vector of colors
 }
 \description{
-Get a vector of qualitative colors
+Get a vector of custom colors
 }
