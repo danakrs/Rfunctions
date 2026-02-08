@@ -4,6 +4,9 @@
 
 git --version
 
+
+Once for the server:
+
 git config --global user.name "Your Name"
 git config --global user.email "youremail@example.com"
 
@@ -20,13 +23,29 @@ Save
 
 ssh -T git@github.com
 
+
+
+
+For each project:
 Create repository in Github & copy
 git@github.com:danakrs/scRNASeq_Krauss_etal_2025.git
 
-In RStudio empty project folder git init
+In RStudio empty project folder
+git init
 
 Created RProject
 Edit .gitignore
+basic:
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+results/
+plots/
+figure/
+omnipathr-log/
+data/
+InitializedProject.R
 
 
 Locally:
@@ -54,12 +73,42 @@ git pull # to get updates
 
 
 
+## if out of synch from github
+first check which commits exist in remote not locally
+git fetch origin
+git log HEAD..origin/main #show changed
+git pull --rebase origin main #pull with rebase (fetch remote, set aside local commit, apply remote changes, replay commit on top)
+git push origin main
 
 
 
 
 
 
+
+
+######### renv
+renv::init()
+# Copy all packages from your default system library
+renv::hydrate()
+
+renv::diagnostics()
+
+renv::settings$r.version("4.5.1")
+renv::snapshot()
+
+
+git add .
+git commit -m "xxx"
+git push
+
+
+
+
+
+
+##################
+## Create PACKAGE
 
 ###################
 Creating Functions & Package
@@ -76,6 +125,21 @@ Document functions with roxygen2 (IMPORTANT)!!!
 
 devtools::document()
 UPDATE DESCRIPTION!!
+devtools::check()
+
+git add .
+git commit -m "Initial version of Rfunctions package"
+git branch -M main
+git push -u origin main
+
+install.packages("remotes")
+remotes::install_github("danakrs/Rfunctions")
+library(Rfunctions)
+
+when editing functions
+devtools::document()
+
+ (might need to delete NAMESPACE file to regenerate)
 devtools::check()
 
 

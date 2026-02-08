@@ -16,5 +16,14 @@ LazyData: true
 RoxygenNote: 7.3.3
 Imports:
     ggplot2,
+    RColorBrewer,
+    DESeq2,
     dplyr,
-    RColorBrewer
+    tibble,
+    magrittr,
+    writexl,
+    stringr,
+    fgsea,
+    rlang
+Suggests:
+    IHW
