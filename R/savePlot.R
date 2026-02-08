@@ -8,7 +8,7 @@
 #' @param height Plot height (optional)
 #' @importFrom ggplot2 ggsave
 #' @export
-save_plot <- function(
+savePlot <- function(
     filename,
     plot,
     plots_dir,

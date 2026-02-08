@@ -88,14 +88,28 @@ git push origin main
 
 
 ######### renv
-renv::init()
+
+##### final working solution
+--> renv_server.R
+renv::snapshot()
+
+
+
+
+
+renv::init(bare = TRUE)
+
 # Copy all packages from your default system library
+# Now hydrate from system library
+# This copies/links packages from system library into renv
 renv::hydrate()
 
-renv::diagnostics()
 
-renv::settings$r.version("4.5.1")
+# Capture current state
 renv::snapshot()
+
+
+renv::diagnostics()
 
 
 git add .
@@ -133,7 +147,9 @@ git branch -M main
 git push -u origin main
 
 install.packages("remotes")
+remove.packages("Rfunctions")
 remotes::install_github("danakrs/Rfunctions")
+
 library(Rfunctions)
 
 when editing functions
