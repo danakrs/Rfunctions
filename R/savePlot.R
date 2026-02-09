@@ -2,7 +2,6 @@
 #'
 #' @param filename Base filename (no extension)
 #' @param plot A ggplot object
-#' @param plots_dir Output directory
 #' @param tag Subfolder name
 #' @param width Plot width (optional)
 #' @param height Plot height (optional)
@@ -11,7 +10,6 @@
 savePlot <- function(
     filename,
     plot,
-    plots_dir,
     tag,
     width = NULL,
     height = NULL
