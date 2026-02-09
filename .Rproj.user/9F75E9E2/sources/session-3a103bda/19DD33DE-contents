@@ -30,7 +30,7 @@ For each project:
 Create repository in Github & copy
 git@github.com:danakrs/scRNASeq_Krauss_etal_2025.git
 
-In RStudio empty project folder
+In RStudio empty project folder 
 git init
 
 Created RProject
@@ -88,28 +88,14 @@ git push origin main
 
 
 ######### renv
-
-##### final working solution
---> renv_server.R
-renv::snapshot()
-
-
-
-
-
-renv::init(bare = TRUE)
-
+renv::init()
 # Copy all packages from your default system library
-# Now hydrate from system library
-# This copies/links packages from system library into renv
 renv::hydrate()
 
-
-# Capture current state
-renv::snapshot()
-
-
 renv::diagnostics()
+
+renv::settings$r.version("4.5.1")
+renv::snapshot()
 
 
 git add .
@@ -147,15 +133,11 @@ git branch -M main
 git push -u origin main
 
 install.packages("remotes")
-remove.packages("Rfunctions")
 remotes::install_github("danakrs/Rfunctions")
-
 library(Rfunctions)
 
 when editing functions
 devtools::document()
-
- (might need to delete NAMESPACE file to regenerate)
 devtools::check()
 
 

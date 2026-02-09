@@ -24,6 +24,7 @@ Imports:
     writexl,
     stringr,
     fgsea,
-    rlang
+    rlang,
+    RColorBrewer
 Suggests:
     IHW
