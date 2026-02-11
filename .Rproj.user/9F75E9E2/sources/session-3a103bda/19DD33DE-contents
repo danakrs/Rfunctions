@@ -30,7 +30,7 @@ For each project:
 Create repository in Github & copy
 git@github.com:danakrs/scRNASeq_Krauss_etal_2025.git
 
-In RStudio empty project folder 
+In RStudio empty project folder
 git init
 
 Created RProject
@@ -123,8 +123,10 @@ git remote -v
 
 Document functions with roxygen2 (IMPORTANT)!!!
 
-devtools::document()
 UPDATE DESCRIPTION!!
+possibly remove NAMESPACE (gets generated again)
+
+devtools::document()
 devtools::check()
 
 git add .

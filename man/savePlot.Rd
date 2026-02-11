@@ -4,7 +4,14 @@
 \alias{savePlot}
 \title{Save a ggplot as PNG and PDF}
 \usage{
-savePlot(filename, plot, tag, width = NULL, height = NULL)
+savePlot(
+  filename,
+  plot,
+  tag = tag,
+  plots_dir = plots_dir,
+  width = NULL,
+  height = NULL
+)
 }
 \arguments{
 \item{filename}{Base filename (no extension)}

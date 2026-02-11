@@ -9,12 +9,12 @@
 #' @importFrom stats setNames
 #' @export
 prepare_gene_rank <- function(res) {
-  res %>%
+  df <- res %>%
     as.data.frame() %>%
     tibble::rownames_to_column("gene") %>%
     dplyr::filter(!is.na(.data$stat)) %>%
-    dplyr::arrange(dplyr::desc(.data$stat)) %>%
-    {
-      stats::setNames(.$stat, .$gene)
-    }
+    dplyr::arrange(dplyr::desc(.data$stat))
+
+  stats::setNames(df$stat, df$gene)
 }
+

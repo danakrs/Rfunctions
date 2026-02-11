@@ -10,7 +10,8 @@
 savePlot <- function(
     filename,
     plot,
-    tag,
+    tag = tag,
+    plots_dir = plots_dir,
     width = NULL,
     height = NULL
 ) {
