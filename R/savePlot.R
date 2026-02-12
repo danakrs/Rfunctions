@@ -2,7 +2,6 @@
 #'
 #' @param filename Base filename (no extension)
 #' @param plot A ggplot object
-#' @param tag Subfolder name
 #' @param width Plot width (optional)
 #' @param height Plot height (optional)
 #' @importFrom ggplot2 ggsave
@@ -10,11 +9,16 @@
 savePlot <- function(
     filename,
     plot,
-    tag = tag,
-    plots_dir = plots_dir,
     width = NULL,
     height = NULL
 ) {
+
+  # check that project globals exist
+  if (!exists("plots_dir", inherits = TRUE))
+    stop("plots_dir not defined in project environment")
+
+  if (!exists("tag", inherits = TRUE))
+    stop("tag not defined in project environment")
 
   out_dir <- file.path(plots_dir, tag)
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
@@ -31,6 +35,3 @@ savePlot <- function(
   save_one("png")
   save_one("pdf")
 }
-
-
-
