@@ -25,6 +25,10 @@ Imports:
     stringr,
     fgsea,
     rlang,
-    RColorBrewer
+    RColorBrewer,
+    biomaRt,
+    AnnotationDbi
 Suggests:
-    IHW
+    IHW,
+    org.Hs.eg.db,
+    org.Mm.eg.db
